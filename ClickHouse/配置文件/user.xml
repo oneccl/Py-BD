@@ -1,0 +1,77 @@
+<?xml version="1.0"?>
+<clickhouse>
+    <profiles>
+        <!-- 读写用户配置 -->
+        <default>
+            <!-- 单查询最大内存使用 -->
+            <max_memory_usage>10000000000</max_memory_usage>
+            <!-- 是否使用未压缩格式存储缓存（一般不建议） -->
+            <use_uncompressed_cache>0</use_uncompressed_cache>
+            <!-- 分配模式下选择副本的方式 -->
+            <load_balancing>random</load_balancing>
+        </default>
+
+        <!-- 只读用户配置 -->
+        <readonly>
+            <max_memory_usage>10000000000</max_memory_usage>
+            <use_uncompressed_cache>0</use_uncompressed_cache>
+            <load_balancing>random</load_balancing>
+            <readonly>1</readonly>
+        </readonly>
+    </profiles>
+
+    <!-- 用户和访问权限控制 -->
+    <users>
+        <!-- default为用户么，可以自己指定 -->
+        <default>
+            <!-- 密码可以用SHA256加密 -->
+            <password_sha256_hex>967f3bf355dddfabfca1c9f5cab39352b2ec1cd0b05f9e1e6b8f629705fe7d6e</password_sha256_hex>
+            <!-- 访问权限设置
+
+                 任何地方都能读取：
+                    <ip>::/0</ip>
+
+                 只能从本地读取：
+                    <ip>::1</ip>
+                    <ip>127.0.0.1</ip>
+
+                 可以用正则表达式去表示
+             -->
+            <networks incl="networks" replace="replace">
+                <ip>::/0</ip>
+            </networks>
+            <!-- profile 指定标签 -->
+            <profile>default</profile>
+            <!-- Quota 指定标签 -->
+            <quota>default</quota>
+        </default>
+        <!-- 只读用户(个人创建) -->
+        <ck>
+            <password_sha256_hex>967f3bf355dddfabfca1c9f5cab39352b2ec1cd0b05f9e1e6b8f629705fe7d6e</password_sha256_hex>
+            <networks incl="networks" replace="replace">
+                <ip>::/0</ip>
+            </networks>
+            <profile>readonly</profile>
+            <quota>default</quota>
+        </ck>
+    </users>
+
+    <!-- 资源限额 -->
+    <quotas>
+        <!-- 资源限额的名字. -->
+        <default>
+            <!-- 用于限制一定时间间隔内的资源使用量 -->
+            <interval>
+                <!-- 时间间隔 -->
+                <duration>3600</duration>
+                <!-- 下面配置为无限制 -->
+                <queries>0</queries>
+                <errors>0</errors>
+                <result_rows>0</result_rows>
+                <read_rows>0</read_rows>
+                <execution_time>0</execution_time>
+            </interval>
+        </default>
+    </quotas>
+</clickhouse>
+

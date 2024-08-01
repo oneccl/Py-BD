@@ -1,0 +1,98 @@
+<?xml version="1.0"?>
+<!--新版本的ClickHouse集群的首个标签必须是clickhouse，而不是yandex -->
+<clickhouse>
+    <!-- 集群配置 -->
+    <!-- 配置ClickHouse集群分片副本的标签 -->
+    <!-- 之前版本是clickhouse_remote_servers，新版本改为remote_servers，如果还使用之前的标签，登录客户端后执行select * from system.clusters查询会查询不到集群的信息 -->
+    <!-- 确保和config.xml中<remote_servers incl="remote_servers" />中的incl参数值一致 -->
+    <remote_servers>
+        <!-- 集群分片及副本配置（所有节点此配置相同）：3节点3分片1副本（3实例） -->
+        <!-- 集群名称，可自由定义，不能包含点号 -->
+        <!-- <ck_cluster_3shards_1replicas> -->
+        <ck_cluster>
+            <!-- 分片配置，一个节点一个分片，避免资源争夺 -->
+            <!-- 数据分片1 -->
+            <shard>
+                <!-- 是否只将数据写入其中一个副本(内部复制)，默认为false(写入所有副本)，在复制表的情况下可能会导致重复和不一致，所以这里一定要改为true -->
+                <internal_replication>true</internal_replication>
+                <!-- 副本配置，ClickHouse没有主备之分 -->
+                <replica>
+                    <host>bd91</host>
+                    <port>9999</port>
+                </replica>
+                <!-- 配置分布式表的权重，用于在读写数据时进行负载均衡。当数据被写入或读取时，ClickHouse会根据这些权重来决定分配给每个节点的读写数据 -->
+                <weight>1</weight>
+            </shard>
+            <!-- 数据分片2 -->
+            <shard>
+                <internal_replication>true</internal_replication>
+                <replica>
+                    <host>bd92</host>
+                    <port>9999</port>
+                </replica>
+                <weight>1</weight>
+            </shard>
+            <!-- 数据分片3 -->
+            <shard>
+                <internal_replication>true</internal_replication>
+                <replica>
+                    <host>bd93</host>
+                    <port>9999</port>
+                </replica>
+                <weight>1</weight>
+            </shard>
+        </ck_cluster>
+    </remote_servers>
+
+    <!-- ZK集群配置 -->
+    <zookeeper-servers>
+        <node index="1">
+            <host>bd91</host>
+            <port>2181</port>
+        </node>
+        <node index="2">
+            <host>bd92</host>
+            <port>2181</port>
+        </node>
+        <node index="3">
+            <host>bd93</host>
+            <port>2181</port>
+        </node>
+        <!-- 客户端会话的最大超时（以毫秒为单位）-->
+        <session_timeout_ms>30000</session_timeout_ms>
+        <operation_timeout_ms>10000</operation_timeout_ms>
+        <!-- 用作ClickHouse服务器使用的zk的根目录，确认：ls /path/to/zookeeper/node -->
+        <root>/path/to/zookeeper/node</root>
+    </zookeeper-servers>
+
+    <!-- 区分每台ClickHouse节点的宏配置 -->
+    <!-- 当前分片的副本名称，配置macros是为了方便后续创建分布式表（复制表）时可以用动态参数指定表在zk上的路径 -->
+    <macros>
+        <!-- 第1个分片 -->
+        <!-- 分片ID，在其它节点修改为02、03 -->
+        <shard>01</shard>
+        <!-- 第1个分片的第1个副本 -->
+        <!-- 副本名称，用于对同一分片上的副本进行区分标识，一般格式为：cluster_[分片ID]_[副本ID]，在其它节点修改为r2、r3 -->
+        <replica>r1</replica>
+    </macros>
+
+    <!-- 配置任意IP可以访问 -->
+    <!-- 无限制访问IPv6网络/IP地址，::/0是IPv6中的一个特殊表示，代表所有IPv6地址 -->
+    <networks>
+        <ip>::/0</ip>
+    </networks>
+
+    <!-- MergeTree引擎表的数据压缩配置 -->
+    <clickhouse_compression>
+        <case>
+            <!-- 数据部分的最小大小 -->
+            <min_part_size>10000000000</min_part_size>
+            <!-- 数据部分大小与表大小的比率 -->
+            <min_part_size_ratio>0.01</min_part_size_ratio>
+            <!-- 压缩算法lz4，比zstd快，但更占磁盘-->
+            <method>lz4</method>
+        </case>
+    </clickhouse_compression>
+
+</clickhouse>
+
